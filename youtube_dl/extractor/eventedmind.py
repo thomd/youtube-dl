@@ -9,35 +9,28 @@ from .common import InfoExtractor
 class EventedMindIE(InfoExtractor):
     _VALID_URL = r'https://www\.eventedmind\.com/classes/(?P<id>[\w\d-]+)$'
     _TEST = {
-        'url': 'http://yourextractor.com/watch/42',
-        'md5': 'TODO: md5 sum of the first 10241 bytes of the video file (use --test)',
+        'url': 'https://www.eventedmind.com/classes/oauth-from-scratch-98a98727',
         'info_dict': {
-            'id': '42',
-            'ext': 'mp4',
-            'title': 'Video title goes here',
-            'thumbnail': 're:^https?://.*\.jpg$',
-            # TODO more properties, either as:
-            # * A value
-            # * MD5 checksum; start the string with md5:
-            # * A regular expression; start the string with re:
-            # * Any Python type (for example int or float)
-        }
+            'id': 'oauth-from-scratch-98a98727',
+            'title': 'OAuth From Scratch'
+        },
+        'playlist_count': 6
     }
 
     def _real_extract(self, url):
-	video_id = self._match_id(url)
+        playlist_id = self._match_id(url)
 
-	webpage = self._download_webpage(url, video_id)
+        webpage = self._download_webpage(url, playlist_id)
         title = self._html_search_regex(r'<h1>(.+?)</h1>', webpage, 'title')
-        print "Title of Class: %s" % title
-
-
-
+        description = self._html_search_regex(r'<p>(.*?)\s</p>', webpage, 'description', fatal=False)
+        links = re.findall(r'<li class="item video-item class-item">\s*?<a href="([^"]+)">', webpage)
+        urls = map(lambda link: 'https://www.eventedmind.com' + re.sub(r'classes/[^/]+', 'items', link) + '/media.mp4', links)
+        entries = [self.url_result(u) for u in urls]
 
         return {
-            # 'id': video_id,
-            # 'title': title,
-            # 'description': self._og_search_description(webpage),
-            # 'uploader': self._search_regex(r'<div[^>]+id="uploader"[^>]*>([^<]+)<', webpage, 'uploader', fatal=False),
-            # TODO more properties (see youtube_dl/extractor/common.py)
+            '_type': 'playlist',
+            'id': playlist_id,
+            'title': title,
+            'description': description,
+            'entries': entries,
         }
